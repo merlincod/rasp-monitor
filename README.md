@@ -26,11 +26,11 @@ Ce projet est une interface web interactive qui affiche **en temps réel** les s
 
 1. Clonez ce dépôt :
    ```bash
-   git clone https://github.com/votre-utilisateur/raspberry-pi-dashboard.git
+   git clone https://github.com/merlincodr/rasp-monitor
    ```
 2. Naviguez dans le dossier du projet :
    ```bash
-   cd raspberry-pi-dashboard
+   cd rasp-monitor
    ```
 3. Installez les dépendances :
    ```bash
