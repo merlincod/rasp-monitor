@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Raspberry Pi 5</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/gsap.min.js"></script>
+    <link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/raspberrypi/raspberrypi-original.svg" type="image/x-icon">
+    <style>
+        :root {
+            --primary-color: #c51d4a;
+            --secondary-color: #4b0082;
+            --background-color: #353535;
+            --card-background: #353535;
+            --text-color: #ffffff;
+            --text-light: #ffffff;
+            --success-color: #32cd32;
+            --warning-color: #ff4500;
+            --sidebar-width: 150px;
+            --header-height: 60px;
+        }
+
+        body, html {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            height: 100%;
+        }
+
+        .container {
+            display: flex;
+            height: 100%;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--primary-color);
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 30px;
+        }
+        .logo img {
+            width: 100px;
+            height: 100px;
+            margin-left: 10px;
+        }
+
+        .nav-item {
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+            color: #ffffff;
+        }
+
+        .nav-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .main-content {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .header {
+            height: var(--header-height);
+            background-color: var(--card-background);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .card {
+            background-color: var(--card-background);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 200px;
+        }
+
+        #os-card, #cpu-info-card, #cpu-temp-card, #network-card, #process-card, #fs-stats-card {
+            grid-column: span 2;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .inline-info {
+            font-size: 16px;
+            font-weight: 400;
+            color: var(--text-color);
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+            }
+            .main-content {
+                padding: 10px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="logo">
+                <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/raspberrypi/raspberrypi-original.svg" alt="Raspberry Pi Logo">
+            </div>
+            <nav>
+                <div class="nav-item">Dashboard</div>
+                <div class="nav-item">Statistiques</div>
+                <div class="nav-item">Paramètres</div>
+                <div class="nav-item">Aide</div>
+                <div class="nav-item" id="modeToggle">Toggle Mode</div>
+            </nav>
+        </aside>
+        <main class="main-content">
+            <header class="header">
+                <h1>Dashboard Raspberry Pi 5</h1>
+            </header>
+            <div class="dashboard">
+                <div class="card" id="cpu-card">
+                    <div class="card-title">Utilisation CPU</div>
+                    <div class="card-value" id="cpuValue">0%</div>
+                    <div class="chart-container">
+                        <canvas id="cpuChart"></canvas>
+                    </div>
+                </div>
+                <div class="card" id="memory-card">
+                    <div class="card-title">Utilisation Mémoire</div>
+                    <div class="card-value" id="memoryValue">0 GB</div>
+                    <div class="chart-container">
+                        <canvas id="memoryChart"></canvas>
+                    </div>
+                </div>
+                <div class="card" id="disk-card">
+                    <div class="card-title">Utilisation Disque</div>
+                    <div class="card-value" id="diskValue">0 GB</div>
+                    <div class="chart-container">
+                        <canvas id="diskChart"></canvas>
+                    </div>
+                </div>
+                <div class="card" id="uptime-card">
+                    <div class="card-title">Temps de fonctionnement</div>
+                    <div class="card-value" id="uptimeValue">0 jours</div>
+                </div>
+                <div class="card" id="os-card">
+                    <div class="card-title">Système d'exploitation</div>
+                    <div class="inline-info">
+                        <span id="osValue"></span>
+                    </div>
+                </div>
+                <div class="card" id="cpu-info-card">
+                    <div class="card-title">Détails CPU</div>
+                    <div class="inline-info">
+                        <span id="cpuInfoValue"></span>
+                    </div>
+                </div>
+                <div class="card" id="cpu-temp-card">
+                    <div class="card-title">Température CPU</div>
+                    <div class="card-value" id="cpuTempValue">N/A</div>
+                </div>
+                <div class="card" id="network-card">
+                    <div class="card-title">Réseau</div>
+                    <div class="card-value" id="networkValue">N/A</div>
+                </div>
+                <div class="card" id="process-card">
+                    <div class="card-title">Processus</div>
+                    <div class="card-value" id="processValue">N/A</div>
+                </div>
+                <div class="card" id="fs-stats-card">
+                    <div class="card-title">Système de Fichiers</div>
+                    <div class="card-value" id="fsStatsValue">N/A</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function createPieChart(ctx, labels, colors) {
+            return new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: [],
+                        backgroundColor: colors
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        const cpuChart = createPieChart(
+            document.getElementById('cpuChart').getContext('2d'),
+            ['Utilisé', 'Libre'],
+            ['#c51d4a', '#353535']
+        );
+
+        const memoryChart = createPieChart(
+            document.getElementById('memoryChart').getContext('2d'),
+            ['Utilisé', 'Libre'],
+            ['#c51d4a', '#353535']
+        );
+
+        const diskChart = createPieChart(
+            document.getElementById('diskChart').getContext('2d'),
+            ['Utilisé', 'Libre'],
+            ['#c51d4a', '#353535']
+        );
+
+        async function updateStats() {
+            try {
+                const response = await fetch('/api/stats');
+                if (!response.ok) throw new Error('Erreur réseau');
+
+                const data = await response.json();
+
+                console.log('Données reçues:', data);
+
+                // Récupérer et formater les données
+                const cpuUsage = parseFloat(data.cpu_usage);
+                const memoryUsed = parseFloat(data.memory_used);
+                const memoryTotal = parseFloat(data.memory_total);
+                const diskUsed = parseFloat(data.disk_used);
+                const diskTotal = parseFloat(data.disk_total);
+                const uptime = parseInt(data.uptime);
+
+                const os = `${data.os.platform} ${data.os.distro} ${data.os.release}`;
+                const cpuInfo = `${data.cpu.manufacturer} ${data.cpu.brand || ''} @ ${data.cpu.speed}, Cores: ${data.cpu.cores}`;
+                const cpuTemp = data.cpu.temperature ? data.cpu.temperature.main + ' °C' : 'N/A';
+                const network = data.network.map(iface => `${iface.iface} (${iface.ip4}): ${iface.speed}`).join(', ');
+                const processes = `Total: ${data.processes.total}, Running: ${data.processes.running}`;
+                const fsStats = `Rx: ${data.fs_stats.rx}, Wx: ${data.fs_stats.wx}, Tx/sec: ${data.fs_stats.tx_sec}, Rx/sec: ${data.fs_stats.rx_sec}`;
+
+                // Mise à jour du DOM
+                document.getElementById('cpuValue').textContent = cpuUsage.toFixed(2) + '%';
+                document.getElementById('memoryValue').textContent = memoryUsed.toFixed(2) + ' / ' + memoryTotal.toFixed(2) + ' GB';
+                document.getElementById('diskValue').textContent = diskUsed.toFixed(2) + ' / ' + diskTotal.toFixed(2) + ' GB';
+                document.getElementById('uptimeValue').textContent = formatUptime(uptime);
+
+                document.getElementById('osValue').textContent = os;
+                document.getElementById('cpuInfoValue').textContent = cpuInfo;
+                document.getElementById('cpuTempValue').textContent = cpuTemp;
+                document.getElementById('networkValue').textContent = network;
+                document.getElementById('processValue').textContent = processes;
+                document.getElementById('fsStatsValue').textContent = fsStats;
+
+                // Mise à jour des graphiques
+                cpuChart.data.datasets[0].data = [cpuUsage, 100 - cpuUsage];
+                cpuChart.update();
+
+                memoryChart.data.datasets[0].data = [memoryUsed, memoryTotal - memoryUsed];
+                memoryChart.update();
+
+                diskChart.data.datasets[0].data = [diskUsed, diskTotal - diskUsed];
+                diskChart.update();
+
+            } catch (error) {
+                console.error('Erreur lors de la mise à jour des statistiques:', error);
+            }
+        }
+
+        function formatUptime(seconds) {
+            const days = Math.floor(seconds / (3600 * 24));
+            const hours = Math.floor((seconds % (3600 * 24)) / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            return `${days}j ${hours}h ${minutes}m`;
+        }
+
+        setInterval(updateStats, 3000);
+
+    </script>
+</body>
+</html>

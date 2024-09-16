@@ -1,0 +1,16 @@
+{
+  "name": "rasp-monitor",
+  "version": "1.0.0",
+  "description": "Un projet de Monitoring Raspberry",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "pm2": "^5.4.2",
+    "systeminformation": "^5.23.5"
+  },
+  "author": "Merlin's Code",
+  "license": "ISC"
+}
